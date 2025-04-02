@@ -41,17 +41,10 @@ def process_hl7_files(input_dir, error_map, output_csv):
                     
                     unprocessed_message = file.read()
                     
-                    print(unprocessed_message)
-                    
                     message = parse_message(unprocessed_message.replace("\n", "\r"), validation_level=VALIDATION_LEVEL.QUIET, find_groups=False)
-                    
-                    for child in message.children:
-                        print(child)
                     
                     # Extract relevant fields
                     msh7_timestamp = message.msh.msh_10.to_er7() if message.msh.msh_10 else ""
-                    
-                    print(msh7_timestamp)
                     
                     pid_segment = message.pid.to_er7() if message.pid else ""
                     
