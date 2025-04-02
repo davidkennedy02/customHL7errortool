@@ -56,10 +56,11 @@ def process_hl7_files(input_dir, error_map, output_csv):
                     pid_segment = message.pid.to_er7() if message.pid else ""
                     
                     # Match timestamp to error message
-                    error_message = error_map.get(msh7_timestamp, "No error found")
+                    error_message = error_map.get(msh7_timestamp, None)
                     
                     # Write to CSV
-                    writer.writerow([filename, pid_segment, error_message, ""])
+                    if error_message:
+                        writer.writerow([filename, pid_segment, error_message, ""])
             except Exception as e:
                 print(f"Error processing {filename}: {e}")
 
