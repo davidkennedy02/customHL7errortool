@@ -1,16 +1,17 @@
 import re
 import os
 import csv
-import hl7apy as hl7
+from hl7apy.parser import parse_message
+from hl7apy import VALIDATION_LEVEL
 
 # File paths
-log_file = "./logfile"
+log_file = "./error.log"
 input_dir = "./input"
 output_csv = "./output/results.csv"
 
 def parse_log_file(log_file):
     error_map = {}
-    pattern = r"'(sfh_adt|nuh_adt)'(\d{20})'"
+    pattern = r'`(sfh_adt|nuh_adt)`(\d{20})'
     
     with open(log_file, 'r') as file:
         for line in file:
@@ -18,7 +19,8 @@ def parse_log_file(log_file):
             if match:
                 timestamp = match.group(2)
                 if timestamp in error_map:
-                    error_map[timestamp] += " | " + line.strip()
+                    # error_map[timestamp] += " | " + line.strip()
+                    pass
                 else:
                     error_map[timestamp] = line.strip()
     
@@ -36,11 +38,22 @@ def process_hl7_files(input_dir, error_map, output_csv):
             
             try:
                 with open(file_path, 'r') as file:
-                    message = hl7.parser.parse_message(file.read(), find_groups=False)
+                    
+                    unprocessed_message = file.read()
+                    
+                    print(unprocessed_message)
+                    
+                    message = parse_message(unprocessed_message.replace("\n", "\r"), validation_level=VALIDATION_LEVEL.QUIET, find_groups=False)
+                    
+                    for child in message.children:
+                        print(child)
                     
                     # Extract relevant fields
-                    msh7_timestamp = message.segment("MSH")[7][0] if message.segment("MSH")[7] else ""
-                    pid_segment = str(message.segment("PID")) if message.segment("PID") else ""
+                    msh7_timestamp = message.msh.msh_10.to_er7() if message.msh.msh_10 else ""
+                    
+                    print(msh7_timestamp)
+                    
+                    pid_segment = message.pid.to_er7() if message.pid else ""
                     
                     # Match timestamp to error message
                     error_message = error_map.get(msh7_timestamp, "No error found")
